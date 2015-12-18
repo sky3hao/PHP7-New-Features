@@ -46,7 +46,7 @@
     $a = isset($_GET['a']) ? $_GET['a'] : 1;
 ```
 
-3. Unicode字符格式支持(\u{xxxxx})
+3.Unicode字符格式支持(\u{xxxxx})
 ```php
     // 打印unicode
     echo "\u{1F602}"; 
