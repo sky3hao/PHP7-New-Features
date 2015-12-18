@@ -5,16 +5,11 @@
 # 目录
 
 - [新增功能](#新增功能)
+  - [常用的语法糖](#常用的语法糖)
   - [标量类型和返回类型声明](#标量类型和返回类型声明)
-  - [更多的Error变为Exception](#更多的Error变为Exception)
+  - [错误处理机制修改](#错误处理机制修改)
   - [AST](#ast)
   - [Native TLS](#native-tls)
-  - [其他新特性](#其他新特性)
-- [弃用功能](#弃用功能)
-- [新增函数](#新增函数)
-- [修改函数](#修改函数)
-- [非兼容性修改](#非兼容性修改)
-  - [错误处理机制修改](#错误处理机制修改)
   - [字符串处理机制修改](#字符串处理机制修改)
   - [整型处理机制修改](#整型处理机制修改)
   - [参数处理机制修改](#参数处理机制修改)
@@ -22,10 +17,135 @@
   - [list()修改](#list修改)
   - [变量处理机制修改](#变量处理机制修改)
   - [其他语言层面的修改](#其他语言层面的修改)
+- [弃用功能](#弃用功能)
+- [新增函数](#新增函数)
+- [修改函数](#修改函数)  
 - [其他修改](#其他修改)
 - [参考](#参考)
 
 # 新增功能
+
+## 常用的语法糖
+
+1. 合并比较运算符: <=>
+```php
+    // PHP 7之前的写法：比较两个数的大小
+    function order_func($a, $b) {
+        return ($a < $b) ? -1 : (($a > $b) ? 1 : 0);
+    }
+    // PHP新增的操作符 <=>,perfect
+    function order_func($a, $b) {
+        return $a <=> $b;
+    }
+```
+
+2. 运算符: ?? 
+```php
+    $a = $_GET['a'] ?? 1;
+    //它相当于：
+    $a = isset($_GET['a']) ? $_GET['a'] : 1;
+```
+
+3. Unicode字符格式支持(\u{xxxxx})
+```php
+    // 打印unicode
+    echo "\u{1F602}"; 
+    echo "\u{0000aa}";
+    echo "\u{9999}";
+```
+
+4. 命名空间引用
+```php
+    // PHP7以前语法的写法
+    use FooLibrary\Bar\Baz\ClassA;
+    use FooLibrary\Bar\Baz\ClassB;
+    use FooLibrary\Bar\Baz\ClassC;
+    use FooLibrary\Bar\Baz\ClassD as Fizbo;
+    // PHP7新语法写法
+    use FooLibrary\Bar\Baz\{ ClassA, ClassB, ClassC, ClassD as Fizbo };
+```
+
+5. 声明数组常量
+```php
+   define('ANIMALS', [
+       'dog',
+       'cat',
+       'bird'
+   ]);
+   echo ANIMALS[1]; // 输出: "cat"
+```
+
+6. 匿名类
+```php
+   interface Logger {
+       public function log(string $msg);
+   }
+   class Application {
+       private $logger;
+       public function getLogger(): Logger {
+           return $this->logger;
+       }
+       public function setLogger(Logger $logger) {
+           $this->logger = $logger;
+       }
+   }
+   $app = new Application;
+   $app->setLogger(new class implements Logger {
+       public function log(string $msg) {
+           echo $msg;
+       }
+   });
+   var_dump($app->getLogger());
+```
+
+7. Closure::call()
+```php
+    class A {private $x = 1;}
+    // PHP 7 之前
+    $getXCB = function() {return $this->x;};
+    $getX = $getXCB->bindTo(new A, 'A'); // intermediate closure
+    echo $getX();
+    // PHP 7 之后
+    $getX = function() {return $this->x;};
+    echo $getX->call(new A);
+```
+
+8. 迭代器
+```php
+    // 例子1
+    function g() {
+        yield 1;
+        yield from [2, 3, 4];
+        yield 5;
+    }
+    $g = g();
+    foreach ($g as $yielded) {
+        var_dump($yielded);
+    }
+    // 例子2
+    $gen = (function() {
+        yield 1;
+        yield 2;
+        return 3;
+    })();
+    foreach ($gen as $val) {
+        echo $val, PHP_EOL;
+    }
+    echo $gen->getReturn(), PHP_EOL;
+    // 例子3
+    function gen() {
+        yield 1;
+        yield 2;
+        yield from gen2();
+    }
+    function gen2() {
+        yield 3;
+        yield 4;
+    }
+    foreach (gen() as $val) {
+        echo $val, PHP_EOL;
+    }
+```
 
 ## 标量类型和返回类型声明 
 PHP语言一个非常重要的特点就是"弱类型", 它让PHP的程序变得非常容易编写, 新手接触PHP能够快速上手, 不过, 它也伴随着一些争议. 
@@ -62,15 +182,17 @@ $name = 18;
 参考: http://hansionxu.blog.163.com/blog/static/241698109201522451148440/
 
 
-## 更多的Error变为Exception
+## 错误处理机制修改
 
-PHP7实现了一个全局的throwable接口, 原来的Exception和部分Error都实现了这个接口, 以接口的方式定义了异常的继承结构. 于是, PHP7中更多的Error变为可捕获的Exception返回给开发者, 如果不进行捕获则为Error, 如果捕获就变为一个可在程序内处理的Exception. 
-这些可被捕获的Error通常都是不会对程序造成致命伤害的Error, 例如函数不存在.
+1. 现在有两个异常类: Exception and Error <br>
+这两个类都实现了一个新的接口: Throwable.
 
-PHP7进一步方便开发者处理, 让开发者对程序的掌控能力更强. 因为在默认情况下, Error会直接导致程序中断, 而PHP7则提供捕获并且处理的能力, 让程序继续执行下去, 为程序员提供更灵活的选择.
-
-例如, 执行一个我们不确定是否存在的函数, PHP5兼容的做法是在函数被调用之前追加的判断function_exist, 而PHP7则支持捕获Exception的处理方式.
+2. 更多的Error变为Exception, 一些致命错误和可恢复致命错误改为抛出Error对象 <br>
+有一些致命错误和可恢复致命错误现在改为报出Error对象. Error对象是和Exception独立的,它们无法被常规的try/catch扑获. <br>
+对于这些已经转为异常的可恢复致命错误, 已经无法通过error handler静默的忽略掉. 尤其是无法忽略类型暗示错误. <br>
+PHP7进一步方便开发者处理, 让开发者对程序的掌控能力更强. 因为在默认情况下, Error会直接导致程序中断, 而PHP7则提供捕获并且处理的能力, 让程序继续执行下去, 为程序员提供更灵活的选择.<br>
 ```php
+// 例如, 执行一个我们不确定是否存在的函数, PHP5兼容的做法是在函数被调用之前追加的判断function_exist, 而PHP7则支持捕获Exception的处理方式.
 try {
     no_exists_func();
 } catch (Error $e) {
@@ -78,6 +200,20 @@ try {
 }
 // 上面程序会输出: Exception: Call to undefined function no_exists_func()
 ```
+
+3. 语法错误会抛出一个ParseError对象 <br>
+语法错误会抛出一个ParseError对象, 该对象继承自Error对象. 之前处理eval()的时候, 对于潜在可能错误的代码除了检查返回值或者error_get_last()之外, 还应该捕获ParseError对象.
+
+4. 内部对象的构造方法如果失败的时候总会抛出异常 <br>
+内部对象的构造方法如果失败的时候总会报出异常. 之前的有一些构造方法会返回NULL或者一个无法使用的对象.
+
+5. 一些E_STRICT错误的级别调整了
+
+6. 参考资料 <br>
+https://wiki.php.net/rfc/engine_exceptions_for_php7 <br>
+https://wiki.php.net/rfc/throwable-interface <br>
+https://wiki.php.net/rfc/internal_constructor_behaviour <br>
+https://wiki.php.net/rfc/reclassify_e_strict
 
 ## AST
 
@@ -101,66 +237,6 @@ PHP在多线程模式下(例如, Web服务器Apache的woker和event模式, 就�
 而这个独有的key值在PHP5中需要传递给每一个需要用到全局变量的函数, PHP7认为这种传递的方式并不友好, 并且存在一些问题. 因而, 尝试采用一个全局的线程特定变量来保存这个key值. 
 
 参考: https://wiki.php.net/rfc/native-tls
-
-## 其他新特性
-
-（1） Int64支持，统一不同平台下的整型长度，字符串和文件上传都支持大于2GB。
-
-（2） 统一变量语法（Uniform variable syntax）。
-
-（3） foreach表现行为一致（Consistently foreach behaviors）
-
-（4） 新的操作符 <=>, ??
-
-（5） Unicode字符格式支持（\u{xxxxx}）
-
-（6） 匿名类支持（Anonymous Class）
-
-# 弃用功能
-* PHP4风格的构造函数将被弃用;(和类名同名的方法视为构造方法, 这是PHP4的语法.)
-* 静态调用非静态方法将被弃用;
-* capture_session_meta选项将被弃用, 可以调用stream_get_meta_data()获得;
-
-# 新增函数
-* GMP(The GNU MP Bignum Library)模块新增了gmp_random_seed()函数;
-* PCRE增加了preg_replace_callback_array方法;
-* 增加了intdiv()函数;
-* 增加了error_clear_last()函数来重置错误状态;
-* 增加了ZipArchive::setComapressionIndex()和ZipArchive::setCompressionName()来设置压缩方法;
-* 增加了deflate_init(), deflate_add(), inflate_init(), inflate_add();
-
-# 修改函数
-* parse_ini_file()和parse_ini_string()的scanner_mode参数增加了INI_SCANNER_TYPED选项;
-* unserialize()增加了第二个参数, 可以用来指定接受的类列表;
-* proc_open()打开的最大限制之前是写死的16, 现在这个限制被移除了, 最大数量取决于PHP可用的内存;
-* array_column() The function now supports an array of objects as well as two-dimensional arrays
-* stream_context_create() windows下面可以接收array("pipe" => array("blocking" => <boolean>))参数;
-* dirname()增加了可选项$levels, 可以用来指定目录的层级. dirname(dirname($foo)) => dirname($foo, 2);
-* debug_zval_dump()打印的时候, 使用int代替long, 使用float代替double;
-
-# 非兼容性修改
-
-## 错误处理机制修改
-1. 现在有两个异常类: Exception and Error <br>
-这两个类都实现了一个新的接口: Throwable.
-
-2. 一些致命错误和可恢复致命错误改为抛出Error对象 <br>
-有一些致命错误和可恢复致命错误现在改为报出Error对象. Error对象是和Exception独立的,它们无法被常规的try/catch扑获. <br>
-对于这些已经转为异常的可恢复致命错误, 已经无法通过error handler静默的忽略掉. 尤其是无法忽略类型暗示错误.
-
-3. 语法错误会抛出一个ParseError对象 <br>
-语法错误会抛出一个ParseError对象, 该对象继承自Error对象. 之前处理eval()的时候, 对于潜在可能错误的代码除了检查返回值或者error_get_last()之外, 还应该捕获ParseError对象.
-
-4. 内部对象的构造方法如果失败的时候总会抛出异常 <br>
-内部对象的构造方法如果失败的时候总会报出异常. 之前的有一些构造方法会返回NULL或者一个无法使用的对象.
-
-5. 一些E_STRICT错误的级别调整了
-
-6. 参考资料 <br>
-https://wiki.php.net/rfc/engine_exceptions_for_php7 <br>
-https://wiki.php.net/rfc/throwable-interface <br>
-https://wiki.php.net/rfc/internal_constructor_behaviour <br>
-https://wiki.php.net/rfc/reclassify_e_strict
 
 ## 字符串处理机制修改
 
@@ -200,32 +276,34 @@ https://wiki.php.net/rfc/unicode_escape
 
 ## 整型处理机制修改
 
-1. 无效八进制数字会报编译错误 <br>
+1. Int64支持, 统一不同平台下的整型长度, 字符串和文件上传都支持大于2GB. 64位PHP7字符串长度可以超过2^31次方字节.
+
+2. 无效八进制数字会报编译错误 <br>
 无效的八进制数字(包含大于7的数字)会报编译错误, 比如下面的代码会报错: <br>
 ```php
 $i = 0781; // 8 is not a valid octal digit!
 // 老版本的PHP会把无效的数字忽略
 ```
 
-2. 位移负的位置会产生异常 <br>
+3. 位移负的位置会产生异常 <br>
 ```php
  var_dump(1 >> -1);
  // ArithmeticError: Bit shift by negative number
 ```
 
-3. 左位移如果超出位数返回0 <br>
+4. 左位移如果超出位数返回0 <br>
 ```php
 var_dump(1 << 64); // int(0)
 // 老版本的PHP运行结果和cpu架构有关系. 比如x86会返回1
 ```
 
-4. 右位移超出会返回0或者-1 <br>
+5. 右位移超出会返回0或者-1 <br>
 ```php
 var_dump(1 >> 64);  // int(0)
 var_dump(-1 >> 64); // int(-1)
 ``` 
 
-5. 参考 <br>
+6. 参考 <br>
 https://wiki.php.net/rfc/integer_semantics
 
 ## 参数处理机制修改
@@ -469,6 +547,29 @@ ini文件里面不再支持#开头的注释, 使用";".
 $HTTP_RAW_POST_DATA 变量被移除, 使用php://input来代替. https://wiki.php.net/rfc/remove_alternative_php_tags
 ```
 
+
+# 弃用功能
+* PHP4风格的构造函数将被弃用;(和类名同名的方法视为构造方法, 这是PHP4的语法.)
+* 静态调用非静态方法将被弃用;
+* capture_session_meta选项将被弃用, 可以调用stream_get_meta_data()获得;
+
+# 新增函数
+* GMP(The GNU MP Bignum Library)模块新增了gmp_random_seed()函数;
+* PCRE增加了preg_replace_callback_array方法;
+* 增加了intdiv()函数;
+* 增加了error_clear_last()函数来重置错误状态;
+* 增加了ZipArchive::setComapressionIndex()和ZipArchive::setCompressionName()来设置压缩方法;
+* 增加了deflate_init(), deflate_add(), inflate_init(), inflate_add();
+
+# 修改函数
+* parse_ini_file()和parse_ini_string()的scanner_mode参数增加了INI_SCANNER_TYPED选项;
+* unserialize()增加了第二个参数, 可以用来指定接受的类列表;
+* proc_open()打开的最大限制之前是写死的16, 现在这个限制被移除了, 最大数量取决于PHP可用的内存;
+* array_column() The function now supports an array of objects as well as two-dimensional arrays
+* stream_context_create() windows下面可以接收array("pipe" => array("blocking" => <boolean>))参数;
+* dirname()增加了可选项$levels, 可以用来指定目录的层级. dirname(dirname($foo)) => dirname($foo, 2);
+* debug_zval_dump()打印的时候, 使用int代替long, 使用float代替double;
+
 # 其他修改
 * NaN和Infinity转为整型的时候, 始终为0;
 * Instead of being undefined and platform-dependent, NaN and Infinity will always be zero when cast to integer;
@@ -477,6 +578,9 @@ $HTTP_RAW_POST_DATA 变量被移除, 使用php://input来代替. https://wiki.ph
 * ignore_user_abort设为真的话, 输出缓存会继续工作, 即使链接中断;
 * Zend扩展接口使用zend_extension.op_array_persist_calc()和zend_extensions.op_array_persist();
 * 引入了zend_internal_function.reserved[]数组;
+* 增加了"alpn_protocols"选项;
+* 增加了ReflectionGenerator类, 用于yield from Traces, current file/line等等;
+* 增加了ReflectionType类, 更好的支持新的返回值和标量声明功能;
 
 # 参考
 * PHP7升级声明 
