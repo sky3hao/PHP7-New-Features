@@ -530,8 +530,8 @@ yield ($foo or die);  // 之前的语法解释行为
 备注: 关于yield, 大家可以参考鸟哥的这篇文章: http://www.laruence.com/2012/08/30/2738.html 
 
 其他的一些调整: <br>
-* 移除了ASP格式的支持和脚本语法的支持: <% 和 <script language=php> 
-* Removed support for assigning the result of new by reference. (很晦涩, 大家有合适的翻译希望告诉我)
+* 移除了ASP格式的支持和脚本语法的支持: <% 和 < script language=php > 
+* Removed support for assigning the result of new by reference. 
 * 移除了在非兼容$this语境中对非静态方法的作用域调用. 参考资料:https://wiki.php.net/rfc/incompat_ctx.
 * http://www.laruence.com/2012/06/14/2628.html
 * ini文件里面不再支持#开头的注释, 使用";". 
