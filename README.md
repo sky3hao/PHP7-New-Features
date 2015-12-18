@@ -27,7 +27,7 @@
 
 ## 常用的语法糖
 
-* 合并比较运算符: <=> <br>
+* 合并比较运算符: <=>
 ```php
     // PHP 7之前的写法：比较两个数的大小
     function order_func($a, $b) {
@@ -39,15 +39,14 @@
     }
 ```
 
-
-*  运算符: ?? 
+* 运算符: ?? 
 ```php
     $a = $_GET['a'] ?? 1;
     //它相当于：
     $a = isset($_GET['a']) ? $_GET['a'] : 1;
 ```
 
-3.  Unicode字符格式支持(\u{xxxxx})
+* Unicode字符格式支持(\u{xxxxx})
 ```php
     // 打印unicode
     echo "\u{1F602}"; 
@@ -55,7 +54,7 @@
     echo "\u{9999}";
 ```
 
-4. 命名空间引用
+* 命名空间引用
 ```php
     // PHP7以前语法的写法
     use FooLibrary\Bar\Baz\ClassA;
@@ -66,7 +65,7 @@
     use FooLibrary\Bar\Baz\{ ClassA, ClassB, ClassC, ClassD as Fizbo };
 ```
 
-5. 声明数组常量
+*  声明数组常量
 ```php
    define('ANIMALS', [
        'dog',
@@ -76,7 +75,7 @@
    echo ANIMALS[1]; // 输出: "cat"
 ```
 
-6. 匿名类
+* 匿名类
 ```php
    interface Logger {
        public function log(string $msg);
@@ -99,7 +98,7 @@
    var_dump($app->getLogger());
 ```
 
-7. Closure::call()
+* Closure::call()
 ```php
     class A {private $x = 1;}
     // PHP 7 之前
@@ -111,7 +110,7 @@
     echo $getX->call(new A);
 ```
 
-8. 迭代器
+* 迭代器
 ```php
     // 例子1
     function g() {
@@ -149,6 +148,7 @@
 ```
 
 ## 标量类型和返回类型声明 
+
 PHP语言一个非常重要的特点就是"弱类型", 它让PHP的程序变得非常容易编写, 新手接触PHP能够快速上手, 不过, 它也伴随着一些争议. 
 
 支持变量类型的定义, 可以说是革新性质的变化, PHP开始以可选的方式支持类型定义.
@@ -182,7 +182,6 @@ $name = 18;
 
 参考: http://hansionxu.blog.163.com/blog/static/241698109201522451148440/
 
-
 ## 错误处理机制修改
 
 1. 现在有两个异常类: Exception and Error <br>
@@ -192,15 +191,6 @@ $name = 18;
 有一些致命错误和可恢复致命错误现在改为报出Error对象. Error对象是和Exception独立的,它们无法被常规的try/catch扑获. <br>
 对于这些已经转为异常的可恢复致命错误, 已经无法通过error handler静默的忽略掉. 尤其是无法忽略类型暗示错误. <br>
 PHP7进一步方便开发者处理, 让开发者对程序的掌控能力更强. 因为在默认情况下, Error会直接导致程序中断, 而PHP7则提供捕获并且处理的能力, 让程序继续执行下去, 为程序员提供更灵活的选择.<br>
-```php
-// 例如, 执行一个我们不确定是否存在的函数, PHP5兼容的做法是在函数被调用之前追加的判断function_exist, 而PHP7则支持捕获Exception的处理方式.
-try {
-    no_exists_func();
-} catch (Error $e) {
-    echo "Exception: " . $e->getMessage();
-}
-// 上面程序会输出: Exception: Call to undefined function no_exists_func()
-```
 
 3. 语法错误会抛出一个ParseError对象 <br>
 语法错误会抛出一个ParseError对象, 该对象继承自Error对象. 之前处理eval()的时候, 对于潜在可能错误的代码除了检查返回值或者error_get_last()之外, 还应该捕获ParseError对象.
@@ -241,7 +231,7 @@ PHP在多线程模式下(例如, Web服务器Apache的woker和event模式, 就�
 
 ## 字符串处理机制修改
 
-1. 含有十六进制字符的字符串不再视为数字 <br>
+含有十六进制字符的字符串不再视为数字 <br>
 含有十六进制字符的字符串不再视为数字, 也不再区别对待. 比如下面的代码: <br>
 ```php
 var_dump("0x123" == "291");     // bool(false)     (previously true)
@@ -261,7 +251,7 @@ if (false === $int) {
 var_dump($int); // int(65535)
 ```
 
-2. \u{后面如果包含非法字符会报错 <br>
+\u{后面如果包含非法字符会报错 <br>
 双引号和heredocs语法里面增加了unicode 码点转义语法, “\u{”后面必须是utf-8字符. 如果是非utf-8字符, 会报错: <br>
 ```php
 $str = "\u{xyz}"; // Fatal error: Invalid UTF-8 codepoint escape sequence
@@ -271,45 +261,45 @@ $str = "\u{xyz}"; // Fatal error: Invalid UTF-8 codepoint escape sequence
  $str = "\u202e"; // Works fine
 ```
  
-3. 参考资料: <br>
+参考资料: <br>
 https://wiki.php.net/rfc/remove_hex_support_in_numeric_strings <br>
 https://wiki.php.net/rfc/unicode_escape
 
 ## 整型处理机制修改
 
-1. Int64支持, 统一不同平台下的整型长度, 字符串和文件上传都支持大于2GB. 64位PHP7字符串长度可以超过2^31次方字节.
+Int64支持, 统一不同平台下的整型长度, 字符串和文件上传都支持大于2GB. 64位PHP7字符串长度可以超过2^31次方字节.<br>
 
-2. 无效八进制数字会报编译错误 <br>
+无效八进制数字会报编译错误 <br>
 无效的八进制数字(包含大于7的数字)会报编译错误, 比如下面的代码会报错: <br>
 ```php
 $i = 0781; // 8 is not a valid octal digit!
 // 老版本的PHP会把无效的数字忽略
 ```
 
-3. 位移负的位置会产生异常 <br>
+位移负的位置会产生异常 <br>
 ```php
  var_dump(1 >> -1);
  // ArithmeticError: Bit shift by negative number
 ```
 
-4. 左位移如果超出位数返回0 <br>
+左位移如果超出位数返回0 <br>
 ```php
 var_dump(1 << 64); // int(0)
 // 老版本的PHP运行结果和cpu架构有关系. 比如x86会返回1
 ```
 
-5. 右位移超出会返回0或者-1 <br>
+右位移超出会返回0或者-1 <br>
 ```php
 var_dump(1 >> 64);  // int(0)
 var_dump(-1 >> 64); // int(-1)
 ``` 
 
-6. 参考 <br>
+参考 <br>
 https://wiki.php.net/rfc/integer_semantics
 
 ## 参数处理机制修改
 
-1. 重复参数命名不再支持 <br>
+重复参数命名不再支持 <br>
 ```php
 // 重复的参数命名不再支持, 比如下面的代码执行的时候会报错:
 public function foo($a, $b, $unused, $unused) {
@@ -317,7 +307,7 @@ public function foo($a, $b, $unused, $unused) {
 }
 ```
 
-2. func_get_arg和func_get_args()调整 <br>
+func_get_arg和func_get_args()调整 <br>
 ```php
 // func_get_arg()和func_get_args()这两个方法返回参数当前的值, 而不是传入时的值, 当前的值有可能会被修改   
 function foo($x) 
@@ -329,7 +319,7 @@ foo(1);
 //上面的代码会打印2,而不是1. 如果想打印原始的值, 调用的顺序调整下即可
 ```
 
-3. 同样在打印异常回溯信息的时候也是显示修改后的值 <br>
+同样在打印异常回溯信息的时候也是显示修改后的值 <br>
 ```php
 function foo($x) 
 {
@@ -350,12 +340,12 @@ Stack trace:
 这个调整不会影响代码的行为, 不过在调试的时候需要注意这个变化.
 其他和参数有关的函数都是同样的调整，比如debug_backtrace().
 
-4. 参考: <br>
+参考: <br>
 https://wiki.php.net/phpng
 
 ## foreach修改
 
-1. foreach()循环对数组内部指针不再起作用 <br>
+foreach()循环对数组内部指针不再起作用 <br>
 ```php
 $array = [0, 1, 2];
 foreach ($array as &$val) 
@@ -367,7 +357,7 @@ foreach ($array as &$val)
 PHP7运行的结果会打印三次int(0), 也就是说数组的内部指针并没有改变. <br>
 之前运行的结果会打印int(1), int(2)和bool(false) <br>
 
-2. 按照值进行循环的时候, foreach是对该数组的拷贝操作 <br>
+按照值进行循环的时候, foreach是对该数组的拷贝操作 <br>
 foreach按照值进行循环的时候(by-value), foreach是对该数组的一个拷贝进行操作. 这样在循环过程中对数组做的修改是不会影响循环行为的. <br>
 ```php
 $array = [0, 1, 2];
@@ -380,7 +370,7 @@ foreach ($array as $val) {
 //之前老版本的PHP会把1跳过, 只打印(0 2).
 ```
 
-3. 按照引用进行循环的时候, 对数组的修改会影响循环 <br>
+按照引用进行循环的时候, 对数组的修改会影响循环 <br>
 
 如果在循环的时候是引用的方式, 对数组的修改会影响循环行为. 不过PHP7版本优化了很多场景下面位置的维护. 比如在循环时往数组中追加元素.<br>
 ```php
@@ -392,17 +382,17 @@ foreach ($array as &$val) {
 // 上面的代码中追加的元素也会参与循环,这样PHP7会打印"int(0) int(1)",老版本只会打印"int(0)"
 ```
 
-4. 对简单对象plain (non-Traversable)的循环 <br>
+对简单对象plain (non-Traversable)的循环 <br>
 对简单对象的循环, 不管是按照值循环还是按引用循环, 和按照引用对数组循环的行为是一样的. 不过对位置的管理会更加精确. 
+<br>
+对迭代对象(Traversable objects)对象行为和之前一致 
 
-5. 对迭代对象(Traversable objects)对象行为和之前一致 
-
-6. 参考 <br>
+参考 <br>
 https://wiki.php.net/rfc/php7_foreach
 
 ## list()修改
 
-1. list()不再按照相反的顺序赋值 <br>
+list()不再按照相反的顺序赋值 <br>
 ```php
 list($array[], $array[], $array[]) = [1, 2, 3];
 var_dump($array);
@@ -413,7 +403,7 @@ list($a, $b, $c) = [1, 2, 3];
 // 和原来的行为还是一样的
 ```
 
-2. 空的list()赋值不再允许 <br>
+空的list()赋值不再允许 <br>
 ```php
 list() = $a;
 list(,,) = $a;
@@ -421,7 +411,7 @@ list($x, list(), $y) = $a;
 // 上面的这些代码运行起来会报错了
 ```
 
-3. list()不在支持字符串拆分功能 <br>
+list()不在支持字符串拆分功能 <br>
 ```php
 $string = "xy";
 list($x, $y) = $string;
@@ -429,20 +419,20 @@ list($x, $y) = $string;
 //PHP5运行的结果是: $x == "x" and $y == "y".
 ```
 
-4. 除此之外, list()现在也适用于数组对象 <br>
+除此之外, list()现在也适用于数组对象 <br>
 ```php
 list($a, $b) = (object) new ArrayObject([0, 1]);
 // PHP7结果: $a == 0 and $b == 1.
 // PHP5结果: $a == null and $b == null.
 ```
 
-5. 参考资料 <br>
+参考资料 <br>
 https://wiki.php.net/rfc/abstract_syntax_tree#changes_to_list <br>
 https://wiki.php.net/rfc/fix_list_behavior_inconsistency
 
 ## 变量处理机制修改
 
-1. 间接变量, 属性和方法引用都按照从左到右的顺序进行解释: <br>
+间接变量, 属性和方法引用都按照从左到右的顺序进行解释: <br>
 ```php
  $$foo['bar']['baz'] // interpreted as ($$foo)['bar']['baz']
  $foo->$bar['baz']   // interpreted as ($foo->$bar)['baz']
@@ -458,13 +448,13 @@ $foo->{$bar['baz']}()
 Foo::{$bar['baz']}()
 ```
 
-2. global关键字现在只能引用简单变量  <br>
+global关键字现在只能引用简单变量  <br>
 ```php
 global $$foo->bar;    // 这种写法不支持
 global ${$foo->bar};  // 需用大括号来达到效果
 ```
 
-3. 用括号把变量或者函数括起来没有用了 <br>
+用括号把变量或者函数括起来没有用了 <br>
 ```php
 function getArray() { return [1, 2, 3]; }
 $last = array_pop(getArray());
@@ -474,7 +464,7 @@ $last = array_pop((getArray()));
 // 注意第二句的调用, 是用圆括号包了起来, 但还是报这个严格错误. 之前版本的PHP是不会报这个错误的.
 ```
 
-4. 引用赋值时自动创建的数组元素或者对象属性顺序和以前不同了 <br>
+引用赋值时自动创建的数组元素或者对象属性顺序和以前不同了 <br>
 ```php
 $array = [];
 $array["a"] =& $array["b"];
@@ -483,13 +473,13 @@ var_dump($array);
 // PHP7产生的数组: ["a" => 1, "b" => 1]
 // PHP5产生的数组: ["b" => 1, "a" => 1]
 ```
-5. 参考资料 <br>
+参考资料 <br>
 https://wiki.php.net/rfc/uniform_variable_syntax <br>
 https://wiki.php.net/rfc/abstract_syntax_tree
 
 ## 其他语言层面的修改
 
-1. 在非兼容$this语境中以静态方式调用非静态方法将不再支持 <br>
+在非兼容$this语境中以静态方式调用非静态方法将不再支持 <br>
 在非兼容$this语境中以静态方式调用非静态方法将不再支持. 在这种场景下面, $this不会被定义, 但调用还可以调用, 但会有一个警告提示:<br>
 ```php
 class A {
@@ -507,7 +497,7 @@ NULL
 // 但如果class B是从class A继承的话,该调用是合法的.
 ```
 
-2. 下面的这些保留字不能用作类名, 接口名和trait名.<br>
+下面的这些保留字不能用作类名, 接口名和trait名.<br>
 ```php
 bool
 int
@@ -525,7 +515,7 @@ mixed
 numeric
 ```
 
-3. yield语法调整<br>
+yield语法调整<br>
 在表达式里面使用yield语法结构的时候, 不再需要括号了. 它现在是一个右关联的操作符, 优先级介于"print"和"=>"操作符. 在某些场景下面行为和之前会不一致.<br>
 ```php
 echo yield -1;
@@ -539,7 +529,7 @@ yield ($foo or die);  // 之前的语法解释行为
 <br>
 备注: 关于yield, 大家可以参考鸟哥的这篇文章: http://www.laruence.com/2012/08/30/2738.html 
 
-4. 其他的一些调整. <br>
+其他的一些调整. <br>
 ```php
 移除了ASP格式的支持和脚本语法的支持: <% 和 <script language=php> 
 Removed support for assigning the result of new by reference. (很晦涩, 大家有合适的翻译希望告诉我)
@@ -547,7 +537,6 @@ Removed support for assigning the result of new by reference. (很晦涩, 大家
 ini文件里面不再支持#开头的注释, 使用";". 
 $HTTP_RAW_POST_DATA 变量被移除, 使用php://input来代替. https://wiki.php.net/rfc/remove_alternative_php_tags
 ```
-
 
 # 弃用功能
 * PHP4风格的构造函数将被弃用;(和类名同名的方法视为构造方法, 这是PHP4的语法.)
